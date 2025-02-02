@@ -25,8 +25,8 @@ class InferenceRequester:
         self,
         prompt: str,
         system_prompt: str = "You are a helpful assistant. You give engaging, well-structured answers to user inquiries.",
-        model: str = "llama-3.1-8b-instruct",
-        max_tokens: int = 1000,
+        model: str = "deepseek-r1-distill-llama-8b",
+        max_tokens: int = 4096,
         stream: bool = False
     ) -> Union[str, Iterator[str]]:
         """
