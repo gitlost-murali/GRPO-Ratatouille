@@ -15,7 +15,9 @@ from trl import GRPOConfig, GRPOTrainer, get_peft_config, ModelConfig, TrlParser
 # Import the remote inference requester
 from utils.inference_requester import InferenceRequester
 from utils.generic_utils import (
-    extract_answer_from_completion,
+    extract_prompt_from_completion,
+    extract_equation_from_completion,
+    extract_lhs_from_equation,
     validate_equation_numbers,
     is_valid_equation_format,
     evaluate_equation
@@ -56,14 +58,14 @@ requester = InferenceRequester()
 
 def format_reward_func(completions, target, **kwargs):
     """
-    Format: <think>...</think><answer>...</answer>
+    Format: <think>...</think><prompt>...</prompt>
         Args:
             completions (list[str]): Generated outputs
-            target (list[str]): Expected answers
+            target (list[str]): Expected prompts
         
         Returns:
             list[float]: Reward scores
-    Validates the output format which must consist of matching <think> and <answer> tags.
+    Validates the output format which must consist of matching <think> and <prompt> tags.
     Reward is 1.0 for correctly formatted outputs, and 0.0 otherwise.
     """
     rewards = []
@@ -81,7 +83,7 @@ def format_reward_func(completions, target, **kwargs):
             f.write(completion)
         
         # Check if the format is correct
-        regex = r"^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>\n<answer>([\s\S]*?)<\/answer>$"
+        regex = r"^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>\n<prompt>([\s\S]*?)<\/prompt>$"
 
         match = re.search(regex, completion, re.DOTALL) 
         # if the format is not correct, reward is 0
@@ -95,7 +97,7 @@ def format_reward_func(completions, target, **kwargs):
 
 def equation_reward_func(completions, target, nums, **kwargs):
     """
-    Evaluates completions by extracting the <answer> portion (the refined prompt),
+    Evaluates completions by extracting the <prompt> portion (the refined prompt),
     sending it to a remote inference model, and then comparing the remote model's reply.
     
     The remote model is accessed via InferenceRequester. For now, the reward is 1.0
@@ -103,7 +105,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
     
     Args:
         completions (list[str]): Generated outputs
-        target (list[str]): Expected answers (or reference prompts).
+        target (list[str]): Expected prompts (or reference prompts).
         nums (list[str]): Available numbers
     
     Returns:
@@ -115,24 +117,43 @@ def equation_reward_func(completions, target, nums, **kwargs):
             # Add synthetic <think> tag
             completion = "<think>" + completion
             
-            # Extract and validate answer
-            generated_prompt = extract_answer_from_completion(completion)
+            # Extract and validate prompt
+            generated_prompt = extract_prompt_from_completion(completion)
             if not generated_prompt:
                 rewards.append(0.0)
                 continue
                 
             # Get equation from remote inference
             raw_response = requester.generate_response(generated_prompt, stream=False)
-            equation = str(raw_response).strip()
-            
+            raw_equation = extract_equation_from_completion(str(raw_response).strip())
+            equation = extract_lhs_from_equation(raw_equation)
+
+            if equation is None:
+                equation = ""
+
             # Validate equation format and numbers
             if not all([
                 validate_equation_numbers(equation, numbers),
                 is_valid_equation_format(equation),
                 evaluate_equation(equation, float(gt))
             ]):
+                os.makedirs("failed_completion_samples", exist_ok=True)
+                failed_log_file = os.path.join("failed_completion_samples", "failed_completion_samples.txt")
+                with open(failed_log_file, "a") as f:
+                    f.write("\n\n==============\n")
+                    f.write("Completion:\n")
+                    f.write(str(completion))
+                    f.write("\n\nRemote Equation:\n")
+                    f.write(str(equation))
+                    f.write("\n\nExpected Equation:\n")
+                    f.write(str(gt))
+                    f.write("\n\nRaw response:\n")
+                    f.write(str(raw_response))
+                    f.write("\n\n************\n")
+
                 rewards.append(0.0)
                 continue
+
                 
             # All validations passed
             rewards.append(1.0)
@@ -144,12 +165,13 @@ def equation_reward_func(completions, target, nums, **kwargs):
                 with open(log_file, "a") as f:
                     f.write("\n\n==============\n")
                     f.write("Completion:\n")
-                    f.write(completion)
+                    f.write(str(completion))
                     f.write("\n\nRemote Equation:\n")
-                    f.write(equation)
+                    f.write(str(equation))
                     
-        except Exception:
+        except Exception as e:
             rewards.append(0.0)
+            print(f"Error while processing completion: {e}")
             
     return rewards
 
@@ -223,23 +245,22 @@ Given Information:
 Required Constraints:
 - Each number must be used exactly once
 - Only basic arithmetic operations (+, -, *, /) are allowed
-- Response should be a single, valid equation
+- Response must include deep and detailed reasoning with an accurate and final valid equation. The response format must include: some reasoning tokens ... <equation>equation here</equation>. For instance, <equation>(30 * 14) - 2</equation>
 
 Think step by step about:
 1. How to present the information clearly without assuming LLM capabilities
 2. Ways to encourage a direct, equation-only response
 3. How to prevent common LLM behaviors like:
-   - Only providing a partial equation or explaining steps instead of giving the equation
-   - Adding extra text or formatting
+   - Providing partial solutions
    - Ignoring some constraints
 4. Balance between being specific and being too restrictive
 
 Show your prompt engineering reasoning in <think> </think> tags.
-Put your final crafted prompt in <answer> </answer> tags."""
+Put your final crafted prompt in <prompt> </prompt> tags."""
           },
           {
             "role": "assistant",
-            "content": "Let me craft an effective prompt that will work for any LLM.\n<think>"
+            "content": "Let me craft an effective prompt that will guide the LLM in solving the problem. \n<think>"
           }]
         return {
             "prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 

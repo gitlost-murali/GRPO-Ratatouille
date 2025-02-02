@@ -1,18 +1,40 @@
 import re
 from typing import List, Union, Tuple
 
-def extract_answer_from_completion(completion: str) -> Union[str, None]:
+def extract_prompt_from_completion(completion: str) -> Union[str, None]:
     """
-    Extract the content between <answer> tags from a completion string.
+    Extract the content between <prompt> tags from a completion string.
     
     Args:
-        completion (str): The completion text containing answer tags
+        completion (str): The completion text containing prompt tags
         
     Returns:
-        str or None: The extracted answer if found, None otherwise
+        str or None: The extracted prompt if found, None otherwise
     """
-    match = re.search(r"<answer>(.*?)</answer>", completion)
+    match = re.search(r"<prompt>(.*?)</prompt>", completion)
     return match.group(1).strip() if match else None
+
+
+def extract_equation_from_completion(completion: str) -> Union[str, None]:
+    """
+    Extract the content between <equation> tags from a completion string.
+    
+    Args:
+        completion (str): The completion text containing equation tags
+        
+    Returns:
+        str or None: The extracted equation if found, None otherwise
+    """
+    match = re.search(r"<equation>(.*?)</equation>", completion)
+    return match.group(1).strip() if match else None
+
+def extract_lhs_from_equation(equation: str) -> str:
+    """
+    Extract the left-hand side of an equation.
+    """
+    if "=" not in equation:
+        return equation
+    return equation.split("=")[0].strip()
 
 def validate_equation_numbers(equation: str, expected_numbers: List[int]) -> bool:
     """

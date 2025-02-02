@@ -1,22 +1,43 @@
 from utils.generic_utils import (
-    extract_answer_from_completion,
+    extract_prompt_from_completion,
     validate_equation_numbers,
     is_valid_equation_format,
-    evaluate_equation
+    evaluate_equation,
+    extract_equation_from_completion,
+    extract_lhs_from_equation
 )
 
-def test_extract_answer_from_completion():
+def test_extract_lhs_from_equation():
+    equation = "1 + 2 = 3"
+    assert extract_lhs_from_equation(equation) == "1 + 2"
+
+    equation = "1 + 2"
+    assert extract_lhs_from_equation(equation) == "1 + 2"
+
+    equation = "1 + 2 == 3"
+    assert extract_lhs_from_equation(equation) == "1 + 2"
+
+def test_extract_prompt_from_completion():
     # Test valid answer extraction
-    completion = "some text <answer>1 + 2</answer> more text"
-    assert extract_answer_from_completion(completion) == "1 + 2"
+    completion = "some text <prompt>1 + 2</prompt> more text"
+    assert extract_prompt_from_completion(completion) == "1 + 2"
     
     # Test missing answer tags
     completion = "some text without tags"
-    assert extract_answer_from_completion(completion) is None
+    assert extract_prompt_from_completion(completion) is None
     
     # Test empty answer tags
-    completion = "some text <answer></answer> more text"
-    assert extract_answer_from_completion(completion) == ""
+    completion = "some text <prompt></prompt> more text"
+    assert extract_prompt_from_completion(completion) == ""
+
+def test_extract_equation_from_completion():
+    # Test valid equation extraction
+    completion = "some text <equation>1 + 2</equation> more text"
+    assert extract_equation_from_completion(completion) == "1 + 2"
+    
+    # Test missing equation tags
+    completion = "some text without tags"
+    assert extract_equation_from_completion(completion) is None
 
 def test_validate_equation_numbers():
     # Test valid number usage
