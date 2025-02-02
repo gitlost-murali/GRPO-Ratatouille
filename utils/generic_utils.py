@@ -28,11 +28,11 @@ def extract_equation_from_completion(completion: str) -> Union[str, None]:
     match = re.search(r"<equation>(.*?)</equation>", completion)
     return match.group(1).strip() if match else None
 
-def extract_lhs_from_equation(equation: str) -> str:
+def extract_lhs_from_equation(equation: Union[str, None]) -> Union[str, None]:
     """
     Extract the left-hand side of an equation.
     """
-    if "=" not in equation:
+    if equation is None or "=" not in equation:
         return equation
     return equation.split("=")[0].strip()
 
