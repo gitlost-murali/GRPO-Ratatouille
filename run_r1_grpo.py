@@ -26,7 +26,7 @@ from utils.generic_utils import (
 from dotenv import load_dotenv
 load_dotenv()
 
-assert "AA_TOKEN" in os.environ, "AA_TOKEN is not set"
+assert "OPENAI_API_TOKEN" in os.environ, "OPENAI_API_TOKEN is not set"
 
 ########################
 # Custom dataclasses

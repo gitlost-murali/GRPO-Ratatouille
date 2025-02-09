@@ -3,30 +3,18 @@ from openai import OpenAI
 from typing import List, Dict, Optional, Union, Iterator
 
 class InferenceRequester:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(InferenceRequester, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
     def __init__(self):
-        if self._initialized:
-            return
-            
         self.client = OpenAI(
-            api_key=os.getenv("AA_TOKEN"),
-            base_url="https://inference-api.product.pharia.com",
+            api_key=os.getenv("OPENAI_API_TOKEN"),
+            # base_url="https://inference-api.product.pharia.com",
         )
-        self._initialized = True
 
     def generate_response(
         self,
         prompt: str,
         system_prompt: str = "You are a helpful assistant. You give engaging, well-structured answers to user inquiries.",
-        model: str = "deepseek-r1-distill-llama-8b",
-        max_tokens: int = 4096,
+        model: str = "o3-mini",
+        max_tokens: int = 8192,
         stream: bool = False
     ) -> Union[str, Iterator[str]]:
         """
@@ -46,7 +34,7 @@ class InferenceRequester:
                     },
                 ],
                 stream=stream,
-                max_tokens=max_tokens
+                max_completion_tokens=max_tokens
             )
             
             if not stream:

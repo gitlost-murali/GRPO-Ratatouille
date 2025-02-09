@@ -4,15 +4,15 @@ from utils.inference_requester import InferenceRequester
 import os
 
 @pytest.mark.integration
-@pytest.mark.skipif(not os.getenv("AA_TOKEN"), reason="AA_TOKEN not set")
+@pytest.mark.skipif(not os.getenv("OPENAI_API_TOKEN"), reason="OPENAI_API_TOKEN not set")
 def test_integration_real_api():
-    """Integration test with real API - only runs if AA_TOKEN is set"""
+    """Integration test with real API - only runs if OPENAI_API_TOKEN is set"""
     requester = InferenceRequester()
     
     # Test basic response
     response = requester.generate_response(
         prompt="What is 2+2?",
-        max_tokens=50
+        max_tokens=8192
     )
     print(f"Response: {response}")
     assert isinstance(response, str)
@@ -21,7 +21,7 @@ def test_integration_real_api():
     # Test streaming response
     stream_response = list(requester.generate_response(
         prompt="Count to 3.",
-        max_tokens=50,
+        max_tokens=8192,
         stream=True
     ))
     print(f"Stream response: {stream_response}")
