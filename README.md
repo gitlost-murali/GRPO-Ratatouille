@@ -1,4 +1,8 @@
-# Reproduce the results
+# About
+
+The goal is to ratatouille/control remote models with smaller models
+
+# Setup
 
 ## Install Pytorch & other libraries, make sure to match your GPU driver version
 %pip install "torch==2.5.1" tensorboard "setuptools<71.0.0"  --index-url https://download.pytorch.org/whl/cu121
