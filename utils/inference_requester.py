@@ -5,8 +5,7 @@ from typing import List, Dict, Optional, Union, Iterator
 class InferenceRequester:
     def __init__(self):
         self.client = OpenAI(
-            api_key=os.getenv("OPENAI_API_TOKEN"),
-            # base_url="https://inference-api.product.pharia.com",
+            api_key=os.getenv("OPENAI_API_TOKEN")
         )
 
     def generate_response(
@@ -51,16 +50,3 @@ class InferenceRequester:
             content = message.choices[0].delta.content
             if content is not None:
                 yield content
-
-
-# requester = InferenceRequester()
-# response = requester.generate_response("What is 2+2?", model="llama-3.1-8b-instruct")
-# print(response)
-
-
-# for message in messages:
-#     content = message.choices[0].delta.content
-#     if content != None:
-#         print(content)
-#     else:
-#         print("<end-of-stream>")
