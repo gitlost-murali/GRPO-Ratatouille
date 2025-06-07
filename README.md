@@ -2,6 +2,8 @@
 
 The goal is to ratatouille/control remote models with smaller models
 
+Note: The code is extensively derived from [Philipp Schmid's blog on mini-R1](https://www.philschmid.de/mini-deepseek-r1)
+
 # Setup
 
 1. Install Pytorch & other libraries, make sure to match your GPU driver version
